@@ -310,17 +310,22 @@ app.post('/api/events/:id/leave', authMiddleware, async (req, res) => {
 // Update event
 app.put('/api/events/:id', authMiddleware, async (req, res) => {
   try {
-    const event = await Event.findByIdAndUpdate(
+    const event = await Event.findOne({
+      _id: req.params.id,
+      organizerId: req.auth.userId
+    });
+
+    if (!event) {
+      return res.status(404).json({ error: 'Event not found or not authorized' });
+    }
+
+    const updatedEvent = await Event.findByIdAndUpdate(
       req.params.id,
       { ...req.body, updatedAt: Date.now() },
       { new: true, runValidators: true }
     );
 
-    if (!event) {
-      return res.status(404).json({ error: 'Event not found' });
-    }
-
-    res.json(event);
+    res.json(updatedEvent);
   } catch (error) {
     console.error('Error updating event:', error);
     res.status(500).json({ error: 'Failed to update event' });
